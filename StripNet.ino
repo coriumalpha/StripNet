@@ -1,41 +1,24 @@
 #include <TimerOne.h>
 #include "LPD6803.h"
-
-
 #include <RCSwitch.h>
 
 RCSwitch mySwitch = RCSwitch();
-
-//Example to control LPD6803-based RGB LED Modules in a strand
-// Original code by Bliptronics.com Ben Moyes 2009
-//Use this as you wish, but please give credit, or at least buy some of my LEDs!
-
-// Code cleaned up and Object-ified by ladyada, should be a bit easier to use
-
-/*****************************************************************************/
 
 // Choose which 2 pins you will use for output.
 // Can be any valid output pins.
 int dataPin = 9;       // 'yellow' wire
 int clockPin = 6;      // 'green' wire
 // Don't forget to connect 'blue' to ground and 'red' to +5V
-
 // Timer 1 is also used by the strip to send pixel clocks
 
-// Set the first variable to the NUMBER of pixels. 20 = 20 pixels in a row
+// Set the first variable to the NUMBER of addresses.
 LPD6803 strip = LPD6803(50, dataPin, clockPin);
 
 int lastFunction;
 
 void setup() {
-
-
-  pinMode(1, OUTPUT);
-  pinMode(4, OUTPUT);
-  digitalWrite(1, HIGH);
-  digitalWrite(4, LOW);
   Serial.begin(9600);
-  mySwitch.enableReceive(0);
+  mySwitch.enableReceive(0); //Interrupt 0, digital pin 2 on UNO, tested on MEGA.
     
   // The Arduino needs to clock out the data to the pixels
   // this happens in interrupt timer 1, we can change how often
@@ -44,16 +27,11 @@ void setup() {
   // especially with strands of over 100 dots.
   // (Note that the max is 'pessimistic', its probably 10% or 20% less in reality)
   
-  strip.setCPUmax(45);  // start with 50% CPU usage. up this if the strand flickers or is slow
-  
-  // Start up the LED counter
-  strip.begin();
+  strip.setCPUmax(45);  // start with 50% CPU usage. up this if the strand flickers or is slow. Tested on MEGA, doesn't work quite well on UNO :D
+  strip.begin(); // Start up the LED counter
+  strip.show(); // Update the strip, to start they are all 'off'
 
-  // Update the strip, to start they are all 'off'
-  strip.show();
-
-  lastFunction = 0;
-  
+  lastFunction = 0; //Set lastFunction to default value
 }
 
 
@@ -61,12 +39,16 @@ void loop() {
 
 
  Serial.println("onLoop");
- if (mySwitch.available()) {
-  
+ if (mySwitch.available())
+ {
     int value = mySwitch.getReceivedValue();
-    if (value == 0) {
+    
+    if (value == 0)
+    {
       Serial.print("Unknown encoding");
-    } else {
+    }
+    else
+    {
       switch(getRemote(value))
       {
         case 0:
