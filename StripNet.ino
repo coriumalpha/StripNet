@@ -16,6 +16,10 @@ LPD6803 strip = LPD6803(50, dataPin, clockPin);
 
 int lastFunction;
 
+byte spatialR1, spatialR2, spatialG1, spatialG2, spatialB1, spatialB2;
+int default1 = 0;
+int default2 = 32;
+
 void setup() {
   Serial.begin(9600);
   mySwitch.enableReceive(0); //Interrupt 0, digital pin 2 on UNO, tested on MEGA.
@@ -32,13 +36,15 @@ void setup() {
   strip.show(); // Update the strip, to start they are all 'off'
 
   lastFunction = 0; //Set lastFunction to default value
+  setGlobalColor(default1, true);
+  setGlobalColor(default2, false);
 }
 
 
 void loop() {
 
 
- Serial.println("onLoop");
+ Serial.println( F("onLoop") );
  if (mySwitch.available())
  {
     int value = mySwitch.getReceivedValue();
@@ -52,24 +58,27 @@ void loop() {
       switch(getRemote(value))
       {
         case 0:
-        mySwitch.resetAvailable();
-          runLastFunction();
+          mySwitch.resetAvailable();
+          colorWipe(64, 50);
           break;
         case 1:
-        mySwitch.resetAvailable();
+          mySwitch.resetAvailable();
           rainbow(50, true);
           break;
         case 2:
-        mySwitch.resetAvailable();
-          panWipe(25, 30, 50, true);
+          mySwitch.resetAvailable();
+          spatialMagic(default1, default2, 50, true);
           break;
         case 3:
+          mySwitch.resetAvailable();
+          panWipe(default1, default2, 50, true);
+          break;
         case 4:
         case 5:
         case 6:
         case 7:
         default:
-        mySwitch.resetAvailable();
+          mySwitch.resetAvailable();
           wipeToBlack(45);
           break;  
       }
@@ -78,7 +87,7 @@ void loop() {
 
 }
 
-void runLastFunction()
+/*void runLastFunction()
 {
   switch(lastFunction)
   {
@@ -89,7 +98,7 @@ void runLastFunction()
     case 1:
       return panWipe(25, 30, 50, true);
   }
-}
+}*/
 
 void rainbow(uint8_t wait, bool infinite) {
   int i, j;
@@ -140,7 +149,7 @@ void rainbowCycle(uint8_t wait) {
 void colorWipe(uint16_t c, uint8_t wait) {
   int i, t;
   for (i=0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, c);
+      strip.setPixelColor(i, Wheel(c));
       strip.show();
       t = millis();
       while(millis() - t < wait)
@@ -176,8 +185,14 @@ void panWipe(uint16_t c, uint16_t c2, int wait, bool infinite) {
           if(mySwitch.available())
           {
             int receivedKey = getRemote(mySwitch.getReceivedValue());
-            
-            if(receivedKey == 2) //Speed decrease key
+
+            if(receivedKey == 0) //Speed decrease key
+            {
+              mySwitch.resetAvailable();
+              colorWipe(64, 50);
+              return;
+            }
+            else if(receivedKey == 2) //Speed decrease key
             {
               wait += 5;
               Serial.println(wait);
@@ -260,6 +275,7 @@ void panWipe(uint16_t c, uint16_t c2, int wait, bool infinite) {
   return; 
 }
 
+
 void wipeToBlack(uint8_t wait) {
   uint8_t c = 0;
   int i;
@@ -288,6 +304,7 @@ unsigned int Color(byte r, byte g, byte b)
 
 //Input a value 0 to 127 to get a color value.
 //The colours are a transition r - g -b - back to r
+//se le va la flapa a partir de 96 por WheelPos>>5
 unsigned int Wheel(byte WheelPos)
 {
   byte r,g,b;
@@ -307,9 +324,210 @@ unsigned int Wheel(byte WheelPos)
       b=31- WheelPos % 32;  //blue down 
       r=WheelPos % 32;      //red up
       g=0;                  //green off
-      break; 
+      break;
   }
   return(Color(r,g,b));
+}
+
+void setGlobalColor(byte WheelPos, bool pair)
+{
+  byte r,g,b;
+  switch(WheelPos >> 5)
+  {
+    case 0:
+      r=31- WheelPos % 32;   //Red down
+      g=WheelPos % 32;      // Green up
+      b=0;                  //blue off
+      break; 
+    case 1:
+      g=31- WheelPos % 32;  //green down
+      b=WheelPos % 32;      //blue up
+      r=0;                  //red off
+      break; 
+    case 2:
+      b=31- WheelPos % 32;  //blue down 
+      r=WheelPos % 32;      //red up
+      g=0;                  //green off
+      break;
+  }
+  
+  if(pair == true)
+  {
+    spatialR1 = r;
+    spatialG1 = g;
+    spatialB1 = b;
+  }
+  else
+  {
+    spatialR2 = r;
+    spatialG2 = g;
+    spatialB2 = b;
+  }
+
+  return;
+}
+
+void spatialMagic(int c1, int c2, int wait, bool infinite)
+{
+  int i, leftSize, rightSize;
+  long t;
+  int nPixels = strip.numPixels();
+  int borderOffset = 6;
+  int centerOffset = 2;
+  leftSize = ((nPixels % 2) == 0) ? (nPixels / 2) : ((nPixels / 2) - 1);
+  rightSize = nPixels - leftSize; //may look useless for now
+  leftSize = leftSize - borderOffset;
+  rightSize = rightSize - borderOffset;
+
+  /* PERSONAL CENTERING AID */
+  leftSize += centerOffset;
+  rightSize -= centerOffset;
+
+  
+  float interval, factor, revFactor;
+  byte pr, pg, pb, revert;
+
+  for(int j = 0; j < (nPixels * 2); j++)
+  {
+      revert = 25;
+      for(i=0; i < borderOffset; i++)
+      {
+        strip.setPixelColor( ((i + revert) % nPixels), Color(spatialR1, spatialG1, spatialB1));
+      }
+      
+      interval = (100.0 / leftSize) / 100;
+      for (i=0; i < leftSize; i++)
+      {
+        factor = (i * interval / 2);
+        revFactor = 1.0 - factor;
+        
+        pr = (float(spatialR1) * revFactor) + (float(spatialR2) * factor);
+        pg = (float(spatialG1) * revFactor) + (float(spatialG2) * factor);
+        pb = (float(spatialB1) * revFactor) + (float(spatialB2) * factor);
+        
+        strip.setPixelColor( (((i + borderOffset) + revert) % nPixels), Color(pr, pg, pb) );
+        //strip.setPixelColor( (((i + borderOffset) + revert) % nPixels), Color(0, 0, 0) );
+      }
+      
+      interval = (100.0 / rightSize) / 100;
+      
+      for (i=0; i < rightSize; i++)
+      {
+        factor = ((rightSize - i) * interval / 2);
+        revFactor = 1 - factor;
+        
+        pr = (float(spatialR1) * factor) + (float(spatialR2) * revFactor);
+        pg = (float(spatialG1) * factor) + (float(spatialG2) * revFactor);
+        pb = (float(spatialB1) * factor) + (float(spatialB2) * revFactor);
+        
+        strip.setPixelColor( (((i + borderOffset + leftSize) + revert) % nPixels), Color(pr, pg, pb) );
+        //strip.setPixelColor( (((i + borderOffset + leftSize) + revert) % nPixels), Color(0, 0, 0) );
+      }
+  
+      for(i=0; i < borderOffset; i++)
+      {
+        strip.setPixelColor( (((i + borderOffset + leftSize + rightSize) + revert) % nPixels), Color(spatialR2, spatialG2, spatialB2) );
+      }
+
+       
+      
+    strip.show();
+    
+    t = millis();
+    while(millis() - t < wait)
+    {
+      if(mySwitch.available())
+      {
+        int receivedKey = getRemote(mySwitch.getReceivedValue());
+
+        if(receivedKey == 0) //Speed decrease key
+        {
+          mySwitch.resetAvailable();
+          colorWipe(64, 50);
+          return;
+        }
+        else if(receivedKey == 2) //Speed decrease key
+        {
+          wait += 5;
+          Serial.println(wait);
+          mySwitch.resetAvailable();
+        }
+        else if(receivedKey == 3) //Speed increase key
+        {
+          if(wait > 45)
+          {
+            wait -= 5;
+          }
+          Serial.println(wait);
+          mySwitch.resetAvailable();
+        }
+        else if(receivedKey == 4) //Color1 increase key
+            {
+              if(c1 > 0)
+              {
+                c1 -= 1;
+                setGlobalColor(c1, true);
+              }
+              Serial.println(c1);
+              mySwitch.resetAvailable();
+            }
+
+            else if(receivedKey == 5) //Color1 decrease key
+            {
+              if(c1 < 96)
+              {
+                c1 += 1;
+                setGlobalColor(c1, true);
+              }
+              Serial.println(c1);
+              mySwitch.resetAvailable();
+            }
+
+            else if(receivedKey == 6) //Color2 increase key
+            {
+              if(c2 > 0)
+              {
+                c2 -= 1;
+                setGlobalColor(c2, false);
+              }
+              Serial.println(c2);
+              mySwitch.resetAvailable();
+            }
+
+            else if(receivedKey == 7) //Color2 decrease key
+            {
+              if(c2 < 96)
+              {
+                c2 += 1;
+                setGlobalColor(c2, false);
+              }
+              Serial.println(c2);
+              mySwitch.resetAvailable();
+            }
+        else if(receivedKey == 1) //Pause key received
+        {
+            wipeToBlack(50);
+            mySwitch.resetAvailable(); //Clean buffer after "Pause" key pressed
+            
+            while(!mySwitch.available()) //On pause, wait until new key
+            {}
+            
+            while(mySwitch.available()) //Resume when any key (break)
+            {
+                mySwitch.resetAvailable();
+                break; 
+            }
+        }
+      }
+      //wait
+    }
+  }
+
+  if(infinite)
+  {
+    return spatialMagic(c1, c2, wait, infinite);
+  }
+  return;   
 }
 
 int getRemote(int value)
