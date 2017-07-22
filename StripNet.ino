@@ -7,7 +7,7 @@ RCSwitch mySwitch = RCSwitch();
 // Choose which 2 pins you will use for output.
 // Can be any valid output pins.
 int dataPin = 9;       // 'yellow' wire
-int clockPin = 6;      // 'green' wire
+int clockPin = 7;      // 'green' wire
 // Don't forget to connect 'blue' to ground and 'red' to +5V
 // Timer 1 is also used by the strip to send pixel clocks
 
@@ -74,9 +74,17 @@ void loop() {
           panWipe(default1, default2, 50, true);
           break;
         case 4:
+          wipeToBlack(45);
+          break;
         case 5:
         case 6:
+          mySwitch.resetAvailable();
+          perejil(50);
+          break;
         case 7:
+          mySwitch.resetAvailable();
+          locateSite(50, true);
+          break;
         default:
           mySwitch.resetAvailable();
           wipeToBlack(45);
@@ -99,6 +107,178 @@ void loop() {
       return panWipe(25, 30, 50, true);
   }
 }*/
+
+
+void perejil(uint8_t wait)
+{
+  int i;
+  unsigned long t;
+  
+  for (i=0; i < 10; i++)
+  {
+    strip.setPixelColor(i, Wheel(31));
+  }
+  for (i=10; i < 13; i++)
+  {
+    strip.setPixelColor(i, Wheel(44));
+  }
+  for (i = 13; i < 19; i++)
+  {
+    strip.setPixelColor(i, Wheel(31));
+  }
+  for (i = 19; i < 22; i++)
+  {
+    strip.setPixelColor(i, Wheel(44));
+  }
+  for (i = 22; i < 40; i++)
+  {
+    strip.setPixelColor(i, Wheel(31));
+  }
+  for (i = 40; i < 50; i++)
+  {
+    strip.setPixelColor(i, 0);
+  }  
+
+    strip.show();   // write all the pixels out
+    doNotEditThisDangerousFunction();
+    t = millis();
+    while(true)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+  
+}
+
+
+void locateSite(uint8_t wait, bool infinite)
+{
+  int i, j;
+  unsigned long t;
+  for(j = 0; j < 3; j ++)
+  {
+    //LOOP 1, HIGH
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, Wheel(33)); //green?
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 2)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+    //LOOP 2, LOW
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, 0); //black
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 2)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+  }
+  
+  for(j = 0; j < 3; j ++)
+  {
+    //LOOP 3, HIGH
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, Wheel(66)); //green?
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 4)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+    //LOOP 4, LOW
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, 0); //black
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 2)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+  }
+
+  for(j = 0; j < 3; j ++)
+  {
+    //LOOP 5, HIGH
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, Wheel(33)); //green?
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 2)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+    //LOOP 6, LOW
+    for (i=0; i < strip.numPixels(); i++)
+    {
+      strip.setPixelColor(i, 0); //black
+    } 
+    strip.show();   // write all the pixels out
+    t = millis();
+    while(millis() - t < wait * 2)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+  }
+
+
+    t = millis();
+    while(millis() - t < wait * 10)
+    {
+      if(mySwitch.available())
+      {
+        return;
+      }
+    //wait
+    }
+  
+  if(infinite == true)
+  {
+    return locateSite(wait, infinite);
+  }
+  return;
+
+  
+}
 
 void rainbow(uint8_t wait, bool infinite) {
   int i, j;
@@ -564,5 +744,80 @@ int getRemote(int value)
       }
 }
 
-    
+
+
+
+void doNotEditThisDangerousFunction()
+{
+
+ int a, b, c, d, e, f, g;
+ int xs, s, m, l, xl;
+ int xso, so, mo, lo, xlo;
+ int mu;
+ float mt;
+int i;
+ mu = 3; 
+ mt = 2.5;
+  
+ a = mu * 440;
+ b = mu * 493;
+ c = mu * 523;
+ d = mu * 587;
+ e = mu * 659;
+ f = mu * 698;
+ g = mu * 783;
+ 
+ xso = 150;
+ so = 250;
+ mo = 400;
+ lo = 600;
+ xlo = 850;
+
+ xs = xso / mt;
+ s = so / mt;
+ m = mo / mt;
+ l = lo / mt;
+ xl = xlo / mt;
+  for(i = 0; i < 3; i ++)
+  {
+       tone(6, c);
+        delay(m);
+        noTone(6);  
+
+        tone(6, e);
+        delay(l);
+        noTone(6);  
+
+        tone(6, c);
+        delay(m);
+        noTone(6);  
+
+        tone(6, f);
+        delay(l);
+        noTone(6);  
+
+        tone(6, c);
+        delay(m);
+        noTone(6);  
+
+        tone(6, e);
+        delay(m);
+        noTone(6);  
+
+        tone(6, d);
+        delay(m);
+        noTone(6);  
+
+        tone(6, c);
+        delay(m);
+        noTone(6);  
+
+        tone(6, f);
+        delay(l);
+        noTone(6);
+        
+        delay(l);
+  }
+}
+
     
